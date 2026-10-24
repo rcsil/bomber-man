@@ -11,7 +11,7 @@ const httpServer = http.createServer(app);
 const io = new Server(httpServer, { transports: ['websocket', 'polling'], perMessageDeflate: false });
 const PORT = Number(process.env.PORT) || 3000;
 const WIDTH = 15, HEIGHT = 13, MAX_PLAYERS = 4;
-const TICK_MS = 25, MOVE_INTERVAL = 95, BOMB_FUSE = 2100, FLAME_MS = 650, ROUND_MS = 150000;
+const TICK_MS = 25, MOVE_INTERVAL = 160, BOMB_FUSE = 2100, FLAME_MS = 650, ROUND_MS = 150000;
 const COLORS = ['#5ee3ff', '#ff6c9b', '#ffe17b', '#b0ff72'];
 const SPAWNS = [{x:1,y:1},{x:13,y:11},{x:13,y:1},{x:1,y:11}];
 const rooms = new Map();
@@ -74,7 +74,7 @@ function resetRound(room) {
 function inBounds(x,y) { return x>=0&&x<WIDTH&&y>=0&&y<HEIGHT; }
 function hasBomb(room,x,y){return room.bombs.some(b=>b.x===x&&b.y===y);}
 function move(room,p,dir,now) {
-  if(!p.alive||now-p.lastMove<Math.max(55,MOVE_INTERVAL-p.speed*12)) return;
+  if(!p.alive||now-p.lastMove<Math.max(105,MOVE_INTERVAL-p.speed*15)) return;
   const vectors={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
   if(!vectors[dir]) return;
   const [dx,dy]=vectors[dir], x=p.x+dx, y=p.y+dy;
