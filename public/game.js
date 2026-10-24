@@ -31,7 +31,7 @@ function renderHUD(){
     const item=document.createElement('div');item.className='player'+(!p.alive&&state.phase==='playing'?' dead':'');
     const avatar=document.createElement('div');avatar.className='avatar';avatar.style.background=p.color;
     const info=document.createElement('div');const name=document.createElement('div');name.className='pname';name.textContent=p.name+(p.id===myId?' (você)':'');
-    const sub=document.createElement('small');sub.textContent=state.phase==='lobby'?'Pronto para jogar':state.phase==='playing'?(p.alive?'Vivo • 💣 '+p.capacity+' • 🔥 '+p.range+' • ⚡ '+p.speed+(p.kick?' • 👟':''):'Eliminado'):`🏆 ${p.wins} vitória(s)`;
+    const sub=document.createElement('small');sub.textContent=state.phase==='lobby'?'Pronto para jogar':state.phase==='playing'?(p.alive?'Vivo • 💣 '+p.capacity+' • 🔥 '+p.range+' • ⚡ '+p.speed+(p.kick?' • 👟':'')+(p.glove?' • 🥊':'')+(p.pierce?' • ✨':'')+(p.shield?' • 🛡️':'')+(p.remote?' • 🎮':''):'Eliminado'):`🏆 ${p.wins} vitória(s)`;
     info.append(name,sub);item.append(avatar,info);return item;
   }));
   const overlay=$('overlay');
@@ -52,42 +52,45 @@ function renderHUD(){
 }
 function tile(x,y){ctx.fillRect(x*TILE,y*TILE,TILE,TILE);}
 function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
-function draw(){
-  if(!state)return;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for(let y=0;y<state.board.length;y++)for(let x=0;x<state.board[y].length;x++){
-    const v=state.board[y][x];
-    ctx.fillStyle=(x+y)%2?'#63b67b':'#6bc582';tile(x,y);ctx.fillStyle='#ffffff12';ctx.fillRect(x*TILE+3,y*TILE+3,TILE-6,2);
-    if(v===1){ctx.fillStyle='#5b8bc5';tile(x,y);ctx.fillStyle='#8cb8eb';ctx.fillRect(x*TILE+3,y*TILE+3,TILE-6,6);ctx.fillStyle='#38649b';ctx.fillRect(x*TILE+3,y*TILE+TILE-9,TILE-6,6);}
-    if(v===2){ctx.fillStyle='#ad633d';ctx.fillRect(x*TILE+3,y*TILE+3,TILE-6,TILE-6);ctx.strokeStyle='#f4bb75';ctx.lineWidth=4;ctx.strokeRect(x*TILE+7,y*TILE+7,TILE-14,TILE-14);ctx.beginPath();ctx.moveTo(x*TILE+7,y*TILE+7);ctx.lineTo((x+1)*TILE-7,(y+1)*TILE-7);ctx.stroke();}
-  }
-  for(const p of state.powerups){
-    ctx.fillStyle=({range:'#ffad53',capacity:'#71f1c1',speed:'#87c5ff',kick:'#ed9fff'})[p.type]||'#fff';circle(p.x*TILE+24,p.y*TILE+24,16);ctx.fillStyle='#101724';ctx.font='bold 22px sans-serif';ctx.textAlign='center';ctx.fillText(({range:'🔥',capacity:'+',speed:'⚡',kick:'👟'})[p.type]||'?',p.x*TILE+24,p.y*TILE+31);
-  }
-  for(const b of state.bombs){
-    const cx=b.x*TILE+24,cy=b.y*TILE+26;
-    ctx.fillStyle='#090d1a';circle(cx,cy,17);ctx.fillStyle='#6e7a94';circle(cx-5,cy-6,5);
-    ctx.strokeStyle='#e7c365';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx+7,cy-14);ctx.lineTo(cx+13,cy-22);ctx.stroke();
-    ctx.fillStyle='#f4c65a';circle(cx+13,cy-22,4);
-  }
-  for(const f of state.flames){
-    ctx.fillStyle='#ff8b25';ctx.fillRect(f.x*TILE+2,f.y*TILE+2,TILE-4,TILE-4);
-    ctx.fillStyle='#ffe16d';ctx.fillRect(f.x*TILE+11,f.y*TILE+11,TILE-22,TILE-22);
-  }
-  for(const p of state.players){
-    if(!p.alive)continue;
-    const cx=p.x*TILE+24,cy=p.y*TILE+25;
-    ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(cx,cy+16,17,6,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=p.color;circle(cx,cy,17);ctx.fillStyle='#fff';ctx.fillRect(cx-9,cy-4,7,8);ctx.fillRect(cx+3,cy-4,7,8);ctx.fillStyle='#121827';ctx.fillRect(cx-6,cy-1,3,5);ctx.fillRect(cx+6,cy-1,3,5);
-    if(p.id===myId){ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);ctx.stroke();}
-    ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#101827';ctx.strokeText(p.name,cx,cy-23);ctx.fillStyle='#fff';ctx.fillText(p.name,cx,cy-23);
-  }
+// Original 16-bit-inspired pixel art, not sprites extracted from another game.
+ctx.imageSmoothingEnabled=false;
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
+function hero(cx,cy,color,frame){
+ const x=Math.round(cx-17),y=Math.round(cy-20),step=frame?2:0;
+ rect(x+5,y+31,10,7,'#27364d');rect(x+20,y+31,10,7,'#27364d');
+ rect(x+3,y+23,32,11,color);rect(x+7,y+10,24,19,'#f8f6e8');
+ rect(x+4,y+5,30,13,color);rect(x+8,y+1,22,8,color);
+ rect(x+1,y+14,8,12,color);rect(x+29,y+14,8,12,color);
+ rect(x+11,y+15,16,10,'#232b42');rect(x+13,y+17,4,5,'#fff');rect(x+21,y+17,4,5,'#fff');
+ rect(x+15,y+18,2,3,'#141a2b');rect(x+23,y+18,2,3,'#141a2b');
+ rect(x+8,y+27+step,8,6,'#f8f6e8');rect(x+23,y+27-step,8,6,'#f8f6e8');
+ rect(x+11,y+8,16,3,'#ffffff66');
 }
+function draw(){
+ if(!state)return;
+ const t=performance.now();
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ for(let y=0;y<state.board.length;y++)for(let x=0;x<state.board[y].length;x++){
+  const X=x*TILE,Y=y*TILE,v=state.board[y][x];
+  rect(X,Y,TILE,TILE,(x+y)%2?'#83cc79':'#92d782');
+  rect(X+3,Y+3,4,4,'#aee9a0');rect(X+31,Y+32,3,3,'#5ab668');
+  if(v===1){rect(X,Y,TILE,TILE,'#405b9b');rect(X+3,Y+3,42,36,'#699ad0');rect(X+4,Y+4,40,6,'#b2d8ed');rect(X+5,Y+13,38,17,'#709cc8');rect(X+5,Y+34,38,8,'#29477e');rect(X+22,Y+11,4,23,'#426ca5');rect(X+7,Y+27,35,3,'#3b659a');}
+  if(v===2){rect(X+3,Y+5,42,40,'#704229');rect(X+5,Y+5,38,30,'#e3a25c');rect(X+8,Y+9,32,6,'#f8cb7a');rect(X+8,Y+19,32,13,'#bf7743');rect(X+9,Y+37,30,5,'#84472f');rect(X+11,Y+7,6,32,'#965632');rect(X+31,Y+7,6,32,'#965632');rect(X+9,Y+21,31,4,'#f2bc71');}
+ }
+ const icons={range:'🔥',capacity:'💣',speed:'⚡',kick:'👟',glove:'🥊',pierce:'✨',shield:'🛡️',remote:'🎮'};
+ for(const power of state.powerups){const X=power.x*TILE,Y=power.y*TILE;rect(X+10,Y+9,28,30,'#242d61');rect(X+13,Y+11,22,24,'#fff4bf');rect(X+11,Y+9,26,4,'#fff');ctx.textAlign='center';ctx.font='22px sans-serif';ctx.fillText(icons[power.type]||'?',X+24,Y+31);}
+ for(const bomb of state.bombs){const X=bomb.x*TILE,Y=bomb.y*TILE;const pulse=Math.sin(t/125)*2;rect(X+10,Y+30,29,10,'#27405f55');ctx.fillStyle='#1e2542';ctx.beginPath();ctx.arc(X+24,Y+25,16+pulse,0,Math.PI*2);ctx.fill();ctx.fillStyle='#525d84';ctx.beginPath();ctx.arc(X+18,Y+18,7,0,Math.PI*2);ctx.fill();rect(X+24,Y+5,6,8,'#ffd36e');rect(X+30,Y+2,6,6,'#fff3a0');}
+ for(const flame of state.flames){const X=flame.x*TILE,Y=flame.y*TILE;rect(X+4,Y+4,40,40,'#f35c36');rect(X+9,Y+2,30,44,'#ffaf3c');rect(X+18,Y+8,12,31,'#fff1a2');rect(X+2,Y+18,44,12,'#ffd34e');}
+ for(const p of state.players){if(!p.alive)continue;const X=p.x*TILE+24,Y=p.y*TILE+24;rect(X-15,Y+14,30,6,'#203c5077');hero(X,Y,p.color,Math.floor(t/160)%2);if(p.shield){ctx.strokeStyle='#84f7ff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(X,Y,23,0,Math.PI*2);ctx.stroke();}if(p.id===myId){ctx.strokeStyle='#fff8a5';ctx.lineWidth=3;ctx.strokeRect(p.x*TILE+2,p.y*TILE+2,44,44);}ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#1b2035';ctx.strokeText(p.name,X,Y-26);ctx.fillStyle='#fff';ctx.fillText(p.name,X,Y-26);}
+}
+setInterval(()=>{if(state&&state.phase==='playing')scheduleDraw();},90);
 const keys={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',a:'left',s:'down',d:'right',W:'up',A:'left',S:'down',D:'right'};
 const down=new Set();
 document.addEventListener('keydown',e=>{
  if(!roomId||['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;
  if(e.code==='Space'){e.preventDefault();if(!e.repeat)socket.emit('input',{bomb:true});return;}
+ if(e.key==='e'||e.key==='E'){e.preventDefault();if(!e.repeat)socket.emit('input',{detonate:true});return;}
+ if(e.key==='q'||e.key==='Q'){e.preventDefault();if(!e.repeat)socket.emit('input',{punch:true});return;}
  const dir=keys[e.key];if(!dir)return;e.preventDefault();if(!down.has(dir)){down.add(dir);socket.emit('input',{direction:dir,pressed:true});}
 });
 document.addEventListener('keyup',e=>{const dir=keys[e.key];if(dir){down.delete(dir);socket.emit('input',{direction:dir,pressed:false});}});
@@ -98,5 +101,7 @@ for(const btn of document.querySelectorAll('[data-dir]')){
  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);down.add(dir);socket.emit('input',{direction:dir,pressed:true});});
  btn.addEventListener('pointerup',release);btn.addEventListener('pointercancel',release);
 }
+window.addEventListener('arenaAbility',e=>socket.emit('input',{[e.detail]:true}));
 $('bombControl').addEventListener('pointerdown',e=>{e.preventDefault();socket.emit('input',{bomb:true});});
 })();
+

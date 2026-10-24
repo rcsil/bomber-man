@@ -69,3 +69,9 @@ Este é um protótipo jogável: salas são mantidas em memória e se perdem quan
 - Código de convite corrigido no botão de copiar.
 
 Para atualizar o serviço no Render: substitua os arquivos no repositório conectado, faça commit e push; ou inicie um deploy manual na dashboard, conforme a configuração do serviço. A publicação requer acesso à sua conta Render.
+
+## v1.3 – Batalha 16-bit original
+- Personagens pixelados e novos ladrilhos originais inspirados nos jogos de arena 16-bit.
+- Novos poderes: luva (Q), bomba remota (E), bomba perfurante e escudo.
+- Mantidos chute, velocidade, fogo e capacidade, limite de 4 jogadores.
+- Arte criada para este projeto; não contém sprites oficiais.

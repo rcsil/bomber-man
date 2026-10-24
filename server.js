@@ -49,7 +49,7 @@ function joinRoom(socket,room,name) {
   const taken=new Set(room.players.map(p=>p.slot));
   const slot=[0,1,2,3].find(n=>!taken.has(n));
   const spawn=SPAWNS[slot];
-  room.players.push({id:socket.id,name:cleanName(name),slot,color:COLORS[slot],x:spawn.x,y:spawn.y,alive:true,capacity:1,range:2,lastMove:0,keys:{},bombsPlaced:0,speed:0,kick:false,wins:0});
+  room.players.push({id:socket.id,name:cleanName(name),slot,color:COLORS[slot],x:spawn.x,y:spawn.y,alive:true,capacity:1,range:2,lastMove:0,keys:{},bombsPlaced:0,speed:0,kick:false,glove:false,pierce:false,shield:0,remote:false,wins:0});
   occupants.set(socket.id,room.id);
   socket.join(room.id);
   socket.emit('joined',{roomId:room.id,playerId:socket.id});
@@ -57,8 +57,8 @@ function joinRoom(socket,room,name) {
 }
 function publicState(room) {
   return {id:room.id,phase:room.phase,host:room.host,board:room.board,
-    players:room.players.map(({id,name,slot,color,x,y,alive,capacity,range,speed,kick,wins})=>({id,name,slot,color,x,y,alive,capacity,range,speed,kick,wins})),
-    bombs:room.bombs.map(({x,y,owner,placedAt,range})=>({x,y,owner,placedAt,range})),
+    players:room.players.map(({id,name,slot,color,x,y,alive,capacity,range,speed,kick,glove,pierce,shield,remote,wins})=>({id,name,slot,color,x,y,alive,capacity,range,speed,kick,glove,pierce,shield,remote,wins})),
+    bombs:room.bombs.map(({x,y,owner,placedAt,range,remote,pierce})=>({x,y,owner,placedAt,range,remote,pierce})),
     flames:room.flames.map(({x,y,until})=>({x,y,until})),powerups:room.powerups,winner:room.winner,remaining:room.phase==='playing'?Math.max(0,ROUND_MS-(Date.now()-room.startedAt)):0};
 }
 function broadcast(room) { io.to(room.id).emit('state',publicState(room)); }
@@ -66,7 +66,7 @@ function resetRound(room) {
   room.board=generateMap(); room.bombs=[];room.flames=[];room.powerups=[];room.winner=null;
   for(const p of room.players) {
     const pos=SPAWNS[p.slot];
-    Object.assign(p,{x:pos.x,y:pos.y,alive:true,capacity:1,range:2,lastMove:0,keys:{},bombsPlaced:0,speed:0,kick:false});
+    Object.assign(p,{x:pos.x,y:pos.y,alive:true,capacity:1,range:2,lastMove:0,keys:{},bombsPlaced:0,speed:0,kick:false,glove:false,pierce:false,shield:0,remote:false});
   }
   room.phase='playing';room.startedAt=Date.now();room.nextCollapse=room.startedAt+ROUND_MS;room.collapseStep=0;
   broadcast(room);
@@ -87,18 +87,18 @@ function move(room,p,dir,now) {
   }
   p.x=x;p.y=y;p.lastMove=now;
   const index=room.powerups.findIndex(power=>power.x===x&&power.y===y);
-  if(index!==-1){ const power=room.powerups.splice(index,1)[0]; if(power.type==='range') p.range=Math.min(6,p.range+1); else if(power.type==='capacity') p.capacity=Math.min(5,p.capacity+1); else if(power.type==='speed')p.speed=Math.min(3,p.speed+1); else if(power.type==='kick')p.kick=true; }
+  if(index!==-1){ const power=room.powerups.splice(index,1)[0]; if(power.type==='range') p.range=Math.min(6,p.range+1); else if(power.type==='capacity') p.capacity=Math.min(5,p.capacity+1); else if(power.type==='speed')p.speed=Math.min(3,p.speed+1); else if(power.type==='kick')p.kick=true; else if(power.type==='glove')p.glove=true; else if(power.type==='pierce')p.pierce=true; else if(power.type==='shield')p.shield=Math.min(2,p.shield+1); else if(power.type==='remote')p.remote=true; }
   hitPlayers(room,now);
   return true;
 }
 function placeBomb(room,p,now){
   if(!p.alive||hasBomb(room,p.x,p.y)||room.bombs.filter(b=>b.owner===p.id).length>=p.capacity) return;
-  room.bombs.push({x:p.x,y:p.y,owner:p.id,range:p.range,placedAt:now,detonateAt:now+BOMB_FUSE});
+  room.bombs.push({x:p.x,y:p.y,owner:p.id,range:p.range,placedAt:now,detonateAt:now+(p.remote?10000:BOMB_FUSE),remote:p.remote,pierce:p.pierce});
   broadcast(room);
 }
 function hitPlayers(room,now){
   for(const p of room.players){
-    if(p.alive&&room.flames.some(f=>f.x===p.x&&f.y===p.y&&f.until>now)) p.alive=false;
+    if(p.alive&&room.flames.some(f=>f.x===p.x&&f.y===p.y&&f.until>now)){if(p.shield>0){p.shield--;p.x=SPAWNS[p.slot].x;p.y=SPAWNS[p.slot].y;}else p.alive=false;}
   }
 }
 function explode(room,bomb,now){
@@ -112,8 +112,8 @@ function explode(room,bomb,now){
       affected.push({x,y});
       if(room.board[y][x]===2){
         room.board[y][x]=0;
-        if(Math.random()<0.32 && !room.powerups.some(p=>p.x===x&&p.y===y)){const roll=Math.random();room.powerups.push({x,y,type:roll<0.35?'range':roll<0.67?'capacity':roll<0.89?'speed':'kick'});}
-        break;
+        if(Math.random()<0.38 && !room.powerups.some(p=>p.x===x&&p.y===y)){const types=['range','range','capacity','capacity','speed','speed','kick','glove','pierce','shield','remote'];room.powerups.push({x,y,type:types[Math.floor(Math.random()*types.length)]});}
+        if(!bomb.pierce)break;
       }
     }
   }
@@ -191,6 +191,8 @@ io.on('connection',socket=>{
       if(data.pressed && move(room,p,dir,Date.now())) broadcast(room);
     }
     if(data?.bomb===true)placeBomb(room,p,Date.now());
+    if(data?.detonate===true&&p.remote){const mine=room.bombs.find(b=>b.owner===p.id&&b.remote);if(mine){mine.detonateAt=Date.now();}}
+    if(data?.punch===true&&p.glove){const direction=['up','down','left','right'].find(dir=>p.keys[dir])||'down';const [dx,dy]={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[direction];const b=room.bombs.find(b=>b.x===p.x+dx&&b.y===p.y+dy);if(b){const nx=b.x+dx*2,ny=b.y+dy*2;if(inBounds(nx,ny)&&room.board[ny][nx]===0&&!hasBomb(room,nx,ny)){b.x=nx;b.y=ny;broadcast(room);}}}
   });
   socket.on('leaveRoom',()=>removePlayer(socket));
   socket.on('disconnect',()=>removePlayer(socket));
