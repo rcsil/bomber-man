@@ -75,3 +75,6 @@ Para atualizar o serviço no Render: substitua os arquivos no repositório conec
 - Novos poderes: luva (Q), bomba remota (E), bomba perfurante e escudo.
 - Mantidos chute, velocidade, fogo e capacidade, limite de 4 jogadores.
 - Arte criada para este projeto; não contém sprites oficiais.
+
+## Arte v1.4
+Visual pixel art original inspirado nos jogos 16-bit: blocos de pedra em relevo, caixas de madeira, piso quadriculado, personagens de proporção arcade e fogo mais detalhado. Não contém sprites oficiais.

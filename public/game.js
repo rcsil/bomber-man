@@ -55,16 +55,76 @@ function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
 // Original 16-bit-inspired pixel art, not sprites extracted from another game.
 ctx.imageSmoothingEnabled=false;
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
-function hero(cx,cy,color,frame){
- const x=Math.round(cx-17),y=Math.round(cy-20),step=frame?2:0;
- rect(x+5,y+31,10,7,'#27364d');rect(x+20,y+31,10,7,'#27364d');
- rect(x+3,y+23,32,11,color);rect(x+7,y+10,24,19,'#f8f6e8');
- rect(x+4,y+5,30,13,color);rect(x+8,y+1,22,8,color);
- rect(x+1,y+14,8,12,color);rect(x+29,y+14,8,12,color);
- rect(x+11,y+15,16,10,'#232b42');rect(x+13,y+17,4,5,'#fff');rect(x+21,y+17,4,5,'#fff');
- rect(x+15,y+18,2,3,'#141a2b');rect(x+23,y+18,2,3,'#141a2b');
- rect(x+8,y+27+step,8,6,'#f8f6e8');rect(x+23,y+27-step,8,6,'#f8f6e8');
- rect(x+11,y+8,16,3,'#ffffff66');
+
+// Sprites autorais em baixa resolução, desenhados numa grade virtual 24px.
+// Um pixel da grade equivale a 2 pixels no tabuleiro. Paleta arcade de 16 bits.
+function px(x,y,w,h,c){rect(x,y,w*2,h*2,c);}
+function brick(X,Y){
+ rect(X,Y,48,48,'#343d57');
+ rect(X+1,Y+1,46,34,'#8289a1');
+ rect(X+3,Y+3,42,6,'#c3cad6');
+ rect(X+3,Y+11,42,20,'#727e99');
+ rect(X+4,Y+33,40,9,'#4c5670');
+ rect(X+4,Y+42,40,3,'#252c42');
+ rect(X+23,Y+10,3,24,'#3f4a66');
+ rect(X+3,Y+21,19,2,'#a8b1c5');
+ rect(X+27,Y+21,18,2,'#a8b1c5');
+ rect(X+4,Y+4,3,28,'#e4e6e2');
+ rect(X+40,Y+6,3,27,'#4c5976');
+}
+function crate(X,Y){
+ rect(X+3,Y+5,42,38,'#46384a');
+ rect(X+5,Y+4,38,35,'#f6c36c');
+ rect(X+7,Y+6,34,5,'#ffe4a0');
+ rect(X+8,Y+12,32,19,'#cc864c');
+ rect(X+8,Y+32,32,6,'#aa5639');
+ rect(X+9,Y+10,6,27,'#f3b767');
+ rect(X+33,Y+10,6,27,'#854734');
+ rect(X+15,Y+19,18,4,'#ffcd79');
+ rect(X+18,Y+23,12,7,'#94563e');
+ rect(X+3,Y+38,42,5,'#574153');
+ rect(X+9,Y+8,4,4,'#fff1c2');rect(X+35,Y+8,4,4,'#fff1c2');
+}
+function hero(cx,cy,color,frame,slot=0){
+ const X=Math.round(cx-24),Y=Math.round(cy-28);
+ const bob=frame?1:0;
+ // The silhouette is intentionally chunky, like a 24x24 handheld sprite.
+ px(X,Y+44,7,2,'#34404a77');px(X+28,Y+44,7,2,'#34404a77');
+ px(X+13,Y+35+bob,5,6,'#2b314c');px(X+26,Y+35-bob,5,6,'#2b314c');
+ px(X+11,Y+37+bob,8,3,'#ffffff');px(X+25,Y+37-bob,8,3,'#ffffff');
+ px(X+13,Y+28,19,8,color);px(X+10,Y+29,5,6,'#25304b');
+ px(X+31,Y+29,5,6,'#25304b');
+ px(X+6,Y+17,8,12,color);px(X+34,Y+17,8,12,color);
+ px(X+7,Y+22,5,6,'#f8f2e4');px(X+36,Y+22,5,6,'#f8f2e4');
+ px(X+10,Y+7,29,22,'#202a45');
+ px(X+12,Y+5,25,23,'#f8f6e9');
+ px(X+10,Y+6,29,7,color);px(X+14,Y+2,21,7,color);
+ px(X+17,Y+0,15,3,'#ffffff');
+ px(X+13,Y+13,23,11,'#20293e');
+ px(X+16,Y+14,18,8,'#f8f6e9');
+ px(X+19,Y+15,4,6,'#27324b');
+ px(X+28,Y+15,4,6,'#27324b');
+ px(X+20,Y+15,2,2,'#fff');px(X+29,Y+15,2,2,'#fff');
+ px(X+12,Y+7,4,3,'#ffffff');
+ px(X+17,Y+26,16,4,'#e0dccf');
+ px(X+19,Y+28,12,4,color);
+ if(slot===1){px(X+16,Y+5,7,2,'#ffe1fb');}
+ if(slot===2){px(X+17,Y+5,7,2,'#ffe495');}
+ if(slot===3){px(X+17,Y+5,7,2,'#b9efff');}
+}
+function drawFlame(X,Y,t){
+ const jitter=Math.floor(t/100)%2;
+ rect(X+5,Y+17,38,16,'#db482f');
+ rect(X+17,Y+5,16,38,'#e95231');
+ rect(X+2,Y+20,44,9,'#ff952f');
+ rect(X+20,Y+2,9,44,'#ff9b29');
+ rect(X+8,Y+20,32,8,'#ffe06a');
+ rect(X+20,Y+8,8,32,'#ffe86d');
+ rect(X+19,Y+19,11,11,'#fff8cf');
+ rect(X+4+jitter*2,Y+22,5,5,'#fff4b4');
+ rect(X+37-jitter*2,Y+22,5,5,'#fff4b4');
+ rect(X+22,Y+4+jitter*2,5,5,'#fff4b4');
+ rect(X+22,Y+39-jitter*2,5,5,'#fff4b4');
 }
 function draw(){
  if(!state)return;
@@ -72,16 +132,18 @@ function draw(){
  ctx.clearRect(0,0,canvas.width,canvas.height);
  for(let y=0;y<state.board.length;y++)for(let x=0;x<state.board[y].length;x++){
   const X=x*TILE,Y=y*TILE,v=state.board[y][x];
-  rect(X,Y,TILE,TILE,(x+y)%2?'#83cc79':'#92d782');
-  rect(X+3,Y+3,4,4,'#aee9a0');rect(X+31,Y+32,3,3,'#5ab668');
-  if(v===1){rect(X,Y,TILE,TILE,'#405b9b');rect(X+3,Y+3,42,36,'#699ad0');rect(X+4,Y+4,40,6,'#b2d8ed');rect(X+5,Y+13,38,17,'#709cc8');rect(X+5,Y+34,38,8,'#29477e');rect(X+22,Y+11,4,23,'#426ca5');rect(X+7,Y+27,35,3,'#3b659a');}
-  if(v===2){rect(X+3,Y+5,42,40,'#704229');rect(X+5,Y+5,38,30,'#e3a25c');rect(X+8,Y+9,32,6,'#f8cb7a');rect(X+8,Y+19,32,13,'#bf7743');rect(X+9,Y+37,30,5,'#84472f');rect(X+11,Y+7,6,32,'#965632');rect(X+31,Y+7,6,32,'#965632');rect(X+9,Y+21,31,4,'#f2bc71');}
+  rect(X,Y,TILE,TILE,(x+y)%2?'#429943':'#4da64e');
+  rect(X+2,Y+2,44,44,(x+y)%2?'#53aa50':'#5bb655');
+  rect(X+4,Y+4,16,2,'#81cf69');rect(X+25,Y+26,16,2,'#378942');
+  rect(X+4,Y+23,3,2,'#96d778');rect(X+31,Y+8,3,2,'#96d778');
+  if(v===1)brick(X,Y);
+  if(v===2)crate(X,Y);
  }
  const icons={range:'🔥',capacity:'💣',speed:'⚡',kick:'👟',glove:'🥊',pierce:'✨',shield:'🛡️',remote:'🎮'};
  for(const power of state.powerups){const X=power.x*TILE,Y=power.y*TILE;rect(X+10,Y+9,28,30,'#242d61');rect(X+13,Y+11,22,24,'#fff4bf');rect(X+11,Y+9,26,4,'#fff');ctx.textAlign='center';ctx.font='22px sans-serif';ctx.fillText(icons[power.type]||'?',X+24,Y+31);}
  for(const bomb of state.bombs){const X=bomb.x*TILE,Y=bomb.y*TILE;const pulse=Math.sin(t/125)*2;rect(X+10,Y+30,29,10,'#27405f55');ctx.fillStyle='#1e2542';ctx.beginPath();ctx.arc(X+24,Y+25,16+pulse,0,Math.PI*2);ctx.fill();ctx.fillStyle='#525d84';ctx.beginPath();ctx.arc(X+18,Y+18,7,0,Math.PI*2);ctx.fill();rect(X+24,Y+5,6,8,'#ffd36e');rect(X+30,Y+2,6,6,'#fff3a0');}
- for(const flame of state.flames){const X=flame.x*TILE,Y=flame.y*TILE;rect(X+4,Y+4,40,40,'#f35c36');rect(X+9,Y+2,30,44,'#ffaf3c');rect(X+18,Y+8,12,31,'#fff1a2');rect(X+2,Y+18,44,12,'#ffd34e');}
- for(const p of state.players){if(!p.alive)continue;const X=p.x*TILE+24,Y=p.y*TILE+24;rect(X-15,Y+14,30,6,'#203c5077');hero(X,Y,p.color,Math.floor(t/160)%2);if(p.shield){ctx.strokeStyle='#84f7ff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(X,Y,23,0,Math.PI*2);ctx.stroke();}if(p.id===myId){ctx.strokeStyle='#fff8a5';ctx.lineWidth=3;ctx.strokeRect(p.x*TILE+2,p.y*TILE+2,44,44);}ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#1b2035';ctx.strokeText(p.name,X,Y-26);ctx.fillStyle='#fff';ctx.fillText(p.name,X,Y-26);}
+ for(const flame of state.flames){const X=flame.x*TILE,Y=flame.y*TILE;drawFlame(X,Y,t);}
+ for(const p of state.players){if(!p.alive)continue;const X=p.x*TILE+24,Y=p.y*TILE+24;rect(X-15,Y+14,30,6,'#203c5077');hero(X,Y,p.color,Math.floor(t/150)%2,p.slot);if(p.shield){ctx.strokeStyle='#84f7ff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(X,Y,23,0,Math.PI*2);ctx.stroke();}if(p.id===myId){ctx.strokeStyle='#fff8a5';ctx.lineWidth=3;ctx.strokeRect(p.x*TILE+2,p.y*TILE+2,44,44);}ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#1b2035';ctx.strokeText(p.name,X,Y-26);ctx.fillStyle='#fff';ctx.fillText(p.name,X,Y-26);}
 }
 setInterval(()=>{if(state&&state.phase==='playing')scheduleDraw();},90);
 const keys={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',a:'left',s:'down',d:'right',W:'up',A:'left',S:'down',D:'right'};
